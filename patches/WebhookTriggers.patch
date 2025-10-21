@@ -1,0 +1,32 @@
+--- a/htdocs/core/triggers/interface_95_modWebhook_WebhookTriggers.class.php
++++ b/htdocs/core/triggers/interface_95_modWebhook_WebhookTriggers.class.php
+@@ -75,6 +75,11 @@ class InterfaceWebhookTriggers extends DolibarrTriggers
+ 
+ 		require_once DOL_DOCUMENT_ROOT.'/core/lib/geturl.lib.php';
+ 
++		// Initialize errors array if not set
++		if (!is_array($this->errors)) {
++			$this->errors = array();
++		}
++
+ 		// Or you can execute some code here
+ 		$nbPosts = 0;
+ 		$errors = 0;
+@@ -84,7 +89,7 @@ class InterfaceWebhookTriggers extends DolibarrTriggers
+ 
+ 		if (is_numeric($target_url) && $target_url < 0) {
+ 			dol_syslog("Error Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+-			$this->errors = array_merge($this->errors, $static_object->errors);
++			$this->errors = array_merge((array)$this->errors, $static_object->errors);
+ 			return -1;
+ 		}
+ 
+@@ -165,7 +170,7 @@ class InterfaceWebhookTriggers extends DolibarrTriggers
+ 				$triggerhistory->status = $status;
+ 				if ($triggerhistory->create($user) < 0) {
+ 					$errors++;
+-					$this->errors = array_merge($this->errors, $triggerhistory->errors);
++					$this->errors = array_merge((array)$this->errors, $triggerhistory->errors);
+ 				}
+ 			}
+ 		}
