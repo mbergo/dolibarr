@@ -2799,9 +2799,9 @@ function htmlPrintOnlineHeader($mysoc, $langs, $showlogo = 1, $alttext = '', $su
 		} elseif (!empty($mysoc->logo) && is_readable($conf->mycompany->dir_output . '/logos/' . $logo)) {
 			//$urllogo = DOL_URL_ROOT.'/viewimage.php?cache=1&amp;modulepart=mycompany&amp;file='.urlencode('logos/'.$logo);
 			$urllogopublic = $dolibarr_main_url_root . '/viewimage.php?modulepart=mycompany&entity=' . $conf->entity . '&file=' . urlencode('logos/' . $logo);
-		} elseif (is_readable(DOL_DOCUMENT_ROOT . '/theme/dolibarr_logo.svg')) {
-			//$urllogo = DOL_URL_ROOT.'/theme/dolibarr_logo.svg';
-			$urllogopublic = $dolibarr_main_url_root . '/theme/dolibarr_logo.svg';
+		} elseif (is_readable(DOL_DOCUMENT_ROOT . '/theme/dolibarr_logo.png')) {
+			//$urllogo = DOL_URL_ROOT.'/theme/dolibarr_logo.png';
+			$urllogopublic = $dolibarr_main_url_root . '/theme/dolibarr_logo.png';
 		}
 	}
 
@@ -2825,7 +2825,7 @@ function htmlPrintOnlineHeader($mysoc, $langs, $showlogo = 1, $alttext = '', $su
 		}
 		print '</div>';
 		if (!getDolGlobalString('MAIN_HIDE_POWERED_BY')) {
-			print '<div class="poweredbypublicpayment opacitymedium right hideonsmartphone"><a class="poweredbyhref" href="https://www.dolibarr.org?utm_medium=website&utm_source=poweredby" target="dolibarr" rel="noopener">' . $langs->trans("PoweredBy") . '<br><img class="poweredbyimg" src="' . DOL_URL_ROOT . '/theme/dolibarr_logo.svg" width="80px"></a></div>';
+			print '<div class="poweredbypublicpayment opacitymedium right hideonsmartphone"><a class="poweredbyhref" href="https://www.dolibarr.org?utm_medium=website&utm_source=poweredby" target="dolibarr" rel="noopener">' . $langs->trans("PoweredBy") . '<br><img class="poweredbyimg" src="' . DOL_URL_ROOT . '/theme/dolibarr_logo.png" width="80px"></a></div>';
 		}
 		print '</div>';
 	}

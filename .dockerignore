@@ -1,0 +1,63 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+.github
+
+# Documentation files
+*.md
+LICENSE
+COPYING
+COPYRIGHT
+SECURITY.md
+DCO
+
+# Development files
+.editorconfig
+.travis.yml
+.codeclimate.yml
+.pre-commit-config.yaml
+.mailmap
+phpstan.neon.dist
+pyproject.toml
+composer.json.disabled
+.tx
+.phan
+
+# Docker files (avoid recursion)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+# docker-entrypoint.sh should be included in build context
+.env
+.env.example
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build and test files
+/build
+/node_modules
+/vendor
+*.log
+*.cache
+test/
+tests/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*.old
+
+# Configuration files (will be generated)
+htdocs/conf/conf.php
+documents/
+
+# Custom modules (keep these separate)
+custom/

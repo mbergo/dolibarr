@@ -1,0 +1,161 @@
+version: '3.8'
+
+networks:
+  dolibarr-network:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+    driver: local
+  documents:
+    driver: local
+  redis_data:
+    driver: local
+
+services:
+  # MariaDB Database Service
+  mariadb:
+    image: mariadb:11.1
+    container_name: dolibarr-mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-dolibarr_root_pwd}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-dolibarr}
+      MYSQL_USER: ${MYSQL_USER:-dolibarr}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dolibarr_pwd}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./dev/initdemo:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    networks:
+      - dolibarr-network
+    healthcheck:
+      test: ["CMD", "mariadb", "-u", "root", "-pdolibarr_root_pwd", "-e", "SELECT 1"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Dolibarr Application
+  dolibarr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dolibarr-app:latest
+    container_name: dolibarr-app
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      # Database configuration
+      DOLI_DB_TYPE: ${DOLI_DB_TYPE:-mysqli}
+      DOLI_DB_HOST: ${DOLI_DB_HOST:-mariadb}
+      DOLI_DB_PORT: ${DOLI_DB_PORT:-3306}
+      DOLI_DB_NAME: ${MYSQL_DATABASE:-dolibarr}
+      DOLI_DB_USER: ${MYSQL_USER:-dolibarr}
+      DOLI_DB_PASSWORD: ${MYSQL_PASSWORD:-dolibarr_pwd}
+      DOLI_DB_ROOT_LOGIN: root
+      DOLI_DB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-dolibarr_root_pwd}
+      
+      # Admin configuration
+      DOLI_ADMIN_LOGIN: ${DOLI_ADMIN_LOGIN:-admin}
+      DOLI_ADMIN_PASSWORD: ${DOLI_ADMIN_PASSWORD:-admin123}
+      
+      # URL configuration
+      DOLI_URL_ROOT: ${DOLI_URL_ROOT:-http://localhost:8080}
+      DOLI_NOCSRFCHECK: ${DOLI_NOCSRFCHECK:-0}
+      
+      # PHP configuration
+      PHP_INI_DATE_TIMEZONE: ${TZ:-UTC}
+      PHP_INI_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-256M}
+      PHP_INI_UPLOAD_MAX_FILESIZE: ${PHP_UPLOAD_MAX:-20M}
+      PHP_INI_POST_MAX_SIZE: ${PHP_POST_MAX:-25M}
+      
+      # Installation
+      DOLI_INSTALL_AUTO: ${DOLI_INSTALL_AUTO:-1}
+      DOLI_COMPANY_NAME: ${DOLI_COMPANY_NAME:-My Company}
+      DOLI_COMPANY_COUNTRY_CODE: ${DOLI_COMPANY_COUNTRY_CODE:-US}
+      
+      # Development mode (set to 1 for development)
+      DOLI_DEV_MODE: ${DOLI_DEV_MODE:-0}
+    volumes:
+      # For development: mount source code
+      - ./htdocs:/var/www/html/htdocs:rw
+      - ./scripts:/var/www/html/scripts:ro
+      - ./dev:/var/www/html/dev:ro
+      - ./doc:/var/www/html/doc:ro
+      - ./test:/var/www/html/test:ro
+      
+      # Documents and custom files
+      - documents:/var/www/documents:rw
+      - ./custom:/var/www/html/htdocs/custom:rw
+      
+      # Configuration persistence
+      - ./conf:/var/www/html/htdocs/conf:rw
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    networks:
+      - dolibarr-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/admin/index.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PHPMyAdmin for database management (optional)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: dolibarr-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - mariadb
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER:-dolibarr}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-dolibarr_pwd}
+      UPLOAD_LIMIT: ${PHP_UPLOAD_MAX:-20M}
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    networks:
+      - dolibarr-network
+    profiles:
+      - tools
+
+  # Maildev for email testing (optional)
+  maildev:
+    image: maildev/maildev:latest
+    container_name: dolibarr-maildev
+    restart: unless-stopped
+    command: bin/maildev --smtp 25 --web 1080 --hide-extensions STARTTLS
+    ports:
+      - "${MAIL_SMTP_PORT:-1025}:25"
+      - "${MAIL_WEB_PORT:-8082}:1080"
+    networks:
+      - dolibarr-network
+    profiles:
+      - tools
+
+  # Redis cache (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: dolibarr-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - dolibarr-network
+    profiles:
+      - cache
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
